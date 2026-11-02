@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mixed Moments</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,500;1,600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3eef0;--surface:#fff;--ink:#241f33;--mute:#6b6580;--line:#ddd5df;--accent:#d9603f;--glow:#f2a38a;--map:#e9e1ea;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1a1c2e;--surface:#252845;--ink:#eceaf4;--mute:#a29fb8;--line:#363a5e;--accent:#ff9e80;--glow:#ffd28a;--map:#20233b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1a1c2e;--surface:#252845;--ink:#eceaf4;--mute:#a29fb8;--line:#363a5e;--accent:#ff9e80;--glow:#ffd28a;--map:#20233b;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.6 "DM Sans",system-ui,sans-serif}
+.wrap{max-width:920px;margin:0 auto;padding:40px 20px 64px}
+h1{font:italic 600 clamp(44px,9vw,76px)/1 "Cormorant Garamond",Georgia,serif;margin:0 0 10px}
+.bio{color:var(--mute);max-width:46ch;margin:0 0 28px}
+.mapbox{background:var(--map);border:1px solid var(--line);border-radius:14px;padding:8px;overflow:hidden}
+svg{display:block;width:100%;height:auto}
+.grid line{stroke:var(--line);stroke-width:1}
+.pin{cursor:pointer}
+.pin circle.dot{fill:var(--accent)}
+.pin circle.halo{fill:var(--glow);opacity:.25}
+.pin.on circle.halo{opacity:.55}
+.pin text{fill:var(--ink);font:500 15px "DM Sans",sans-serif}
+.pin:focus{outline:none}.pin:focus-visible circle.dot{stroke:var(--ink);stroke-width:3}
+.bar{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0 18px}
+.bar button{font:500 14px "DM Sans",sans-serif;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:99px;padding:7px 14px;cursor:pointer}
+.bar button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.bar button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.ph{aspect-ratio:4/3;background-size:cover;background-position:center;display:flex;align-items:flex-end;padding:10px;font-size:13px;color:#fff}
+.card .t{padding:12px 14px 16px}
+.card h3{font:italic 600 22px/1.2 "Cormorant Garamond",Georgia,serif;margin:0 0 4px}
+.card p{margin:0;color:var(--mute);font-size:14px}
+.meta{font-size:13px;color:var(--accent);margin-bottom:2px}
+.empty{color:var(--mute);padding:24px 0}
+.note{margin-top:36px;padding:14px 16px;border:1px dashed var(--line);border-radius:10px;color:var(--mute);font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>mymixedmoments</h1>
+  <p class="bio">Little pieces of my world. Travel, food and mixed moments, collected one snap at a time.</p>
+
+  <div class="mapbox">
+    <svg id="map" viewBox="0 0 700 380" role="img" aria-label="Map of places by city"></svg>
+  </div>
+
+  <div class="bar" id="cities" aria-label="Filter by city"></div>
+  <div class="bar" id="cats" aria-label="Filter by category"></div>
+  <div class="cards" id="cards"></div>
+
+  <div class="note">These are sample places. Open the page’s code, find <b>PLACES</b>, and replace the entries with your own spots, captions and photos.</div>
+</div>
+
+<script>
+// ===== EDIT THIS SECTION: your cities and places =====
+var CITIES = {
+  "Bangalore": {lat: 12.97, lon: 77.59},
+  "Singapore": {lat: 1.35,  lon: 103.82},
+  "Vietnam":   {lat: 20.25, lon: 105.9}
+};
+// photo: put a file path (e.g. "photos/zoo.jpg") once the page lives on your own site. Leave "" for a colour block.
+var PLACES = [
+  {city:"Singapore", cat:"Nature", name:"Singapore Zoo", note:"Worth a visit if you love wildlife.", photo:"", tone:"#3f7a5a"},
+  {city:"Singapore", cat:"Nature", name:"Gardens by the Bay", note:"Gardens lay the way.", photo:"", tone:"#2f6b6e"},
+  {city:"Singapore", cat:"Food",   name:"Cocktail by the water", note:"Lychee martini with the skyline behind it.", photo:"", tone:"#b45d7a"},
+  {city:"Vietnam",   cat:"Nature", name:"Boat ride through limestone hills", note:"Peaceful main character energy.", photo:"", tone:"#4a7c6a"},
+  {city:"Vietnam",   cat:"Food",   name:"Coconut drinks", note:"Sipped with a view.", photo:"", tone:"#c28a4b"},
+  {city:"Vietnam",   cat:"Food",   name:"A bowl of pho", note:"Noodles, herbs, chopsticks.", photo:"", tone:"#a8683a"},
+  {city:"Bangalore", cat:"Cafés",  name:"Favourite café corner", note:"Add the name and what you ordered.", photo:"", tone:"#7a5a8c"},
+  {city:"Bangalore", cat:"Food",   name:"Masala chai in the green mug", note:"A slow afternoon.", photo:"", tone:"#6e8a4a"},
+  {city:"Bangalore", cat:"Nature", name:"Mulberries from the garden", note:"Picked fresh.", photo:"", tone:"#5b3f6e"}
+];
+// ===== end of edit section =====
+
+var city = "All", cat = "All";
+var NS = "http://www.w3.org/2000/svg";
+
+function proj(c){ return {x:(c.lon-70)/45*700, y:(30-c.lat)/32*380}; }
+
+function drawMap(){
+  var s = document.getElementById("map"); s.innerHTML = "";
+  var g = document.createElementNS(NS,"g"); g.setAttribute("class","grid");
+  for (var i=1;i<7;i++){ g.innerHTML += '<line x1="'+(i*100)+'" y1="0" x2="'+(i*100)+'" y2="380"/>'; }
+  for (var j=1;j<4;j++){ g.innerHTML += '<line x1="0" y1="'+(j*95)+'" x2="700" y2="'+(j*95)+'"/>'; }
+  s.appendChild(g);
+  Object.keys(CITIES).forEach(function(name){
+    var p = proj(CITIES[name]);
+    var n = PLACES.filter(function(x){return x.city===name;}).length;
+    var el = document.createElementNS(NS,"g");
+    el.setAttribute("class","pin"+(city===name?" on":""));
+    el.setAttribute("tabindex","0"); el.setAttribute("role","button");
+    el.setAttribute("aria-label", name+", "+n+" places");
+    el.innerHTML = '<circle class="halo" cx="'+p.x+'" cy="'+p.y+'" r="26"/><circle class="dot" cx="'+p.x+'" cy="'+p.y+'" r="8"/>'
+      + '<text x="'+(p.x+16)+'" y="'+(p.y+5)+'">'+name+' ('+n+')</text>';
+    var pick = function(){ city = (city===name) ? "All" : name; render(); };
+    el.addEventListener("click", pick);
+    el.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); pick(); } });
+    s.appendChild(el);
+  });
+}
+
+function chips(id, list, current, set){
+  var box = document.getElementById(id); box.innerHTML = "";
+  ["All"].concat(list).forEach(function(v){
+    var b = document.createElement("button");
+    b.textContent = v; b.setAttribute("aria-pressed", v===current);
+    b.onclick = function(){ set(v); render(); };
+    box.appendChild(b);
+  });
+}
+
+function esc(t){ return String(t).replace(/[&<>"]/g, function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+
+function render(){
+  drawMap();
+  var cats = []; PLACES.forEach(function(p){ if(cats.indexOf(p.cat)<0) cats.push(p.cat); });
+  chips("cities", Object.keys(CITIES), city, function(v){ city=v; });
+  chips("cats", cats, cat, function(v){ cat=v; });
+  var list = PLACES.filter(function(p){ return (city==="All"||p.city===city) && (cat==="All"||p.cat===cat); });
+  var box = document.getElementById("cards");
+  if(!list.length){ box.innerHTML = '<div class="empty">No places match yet. Clear a filter to see more.</div>'; return; }
+  box.innerHTML = list.map(function(p){
+    var bg = p.photo ? 'background-image:url('+esc(p.photo)+')' : 'background:linear-gradient(135deg,'+p.tone+',#1a1c2e)';
+    return '<article class="card"><div class="ph" style="'+bg+'">'+(p.photo?'':esc(p.cat))+'</div>'
+      + '<div class="t"><div class="meta">'+esc(p.city)+'</div><h3>'+esc(p.name)+'</h3><p>'+esc(p.note)+'</p></div></article>';
+  }).join("");
+}
+render();
+</script>
+</body>
+</html>
